@@ -7,7 +7,7 @@ import { RoadDetailsDialog } from "./RoadDetailsDialog";
 import { useTrafficData } from "@/hooks/useTrafficData";
 import { WeatherWidget } from "./WeatherWidget";
 
-// Default center (Bangkok)
+// Default center (Krung Thon Buri Road)
 const containerStyle = {
     width: "100%",
     height: "100%",
@@ -16,16 +16,16 @@ const containerStyle = {
 };
 
 const defaultCenter = {
-    lat: 13.7563,
+    lat: 13.7208,
     lng: 100.5018,
 };
 
-// Define coverage area (Bangkok CBD approx)
+// Define coverage area (Krung Thon Buri Area)
 const coverageArea = [
-    { lat: 13.7200, lng: 100.4500 }, // SW
-    { lat: 13.8000, lng: 100.4500 }, // NW
-    { lat: 13.8000, lng: 100.6000 }, // NE
-    { lat: 13.7200, lng: 100.6000 }, // SE
+    { lat: 13.7150, lng: 100.4900 }, // SW
+    { lat: 13.7250, lng: 100.4900 }, // NW
+    { lat: 13.7250, lng: 100.5200 }, // NE
+    { lat: 13.7150, lng: 100.5200 }, // SE
 ];
 
 const libraries: ("places" | "geometry" | "drawing" | "visualization")[] = ["geometry", "visualization"];
@@ -75,7 +75,7 @@ export function MapWrapper() {
             <GoogleMap
                 mapContainerStyle={containerStyle}
                 center={defaultCenter}
-                zoom={12}
+                zoom={14}
                 onLoad={onLoad}
                 onUnmount={onUnmount}
                 options={{
@@ -118,11 +118,11 @@ export function MapWrapper() {
 function TrafficLayer({ onRoadClick }: { onRoadClick: (road: any) => void }) {
     const { trafficData } = useTrafficData();
 
-    // Initial static data
+    // Initial static data (Krung Thon Buri Simulation)
     const initialRoads = [
-        { id: "1", name: "ถนนสุขุมวิท", density: 85, status: "รถติดขัด", lightStatus: "เขียว", path: [{ lat: 13.75, lng: 100.50 }, { lat: 13.76, lng: 100.52 }] },
-        { id: "2", name: "ถนนพระราม 4", density: 20, status: "คล่องตัว", lightStatus: "แดง", path: [{ lat: 13.74, lng: 100.55 }, { lat: 13.74, lng: 100.58 }] },
-        { id: "3", name: "ถนนเพชรบุรี", density: 55, status: "ปานกลาง", lightStatus: "เขียว", path: [{ lat: 13.72, lng: 100.52 }, { lat: 13.74, lng: 100.54 }] },
+        { id: "1", name: "ถ.กรุงธนบุรี (ขาเข้า)", density: 65, status: "รถหนาแน่น", lightStatus: "เขียว", path: [{ lat: 13.7210, lng: 100.4950 }, { lat: 13.7205, lng: 100.5100 }] },
+        { id: "2", name: "ถ.กรุงธนบุรี (ขาออก)", density: 25, status: "คล่องตัว", lightStatus: "แดง", path: [{ lat: 13.7195, lng: 100.5100 }, { lat: 13.7200, lng: 100.4950 }] },
+        { id: "3", name: "แยกเจริญนคร", density: 80, status: "รถติดขัด", lightStatus: "แดง", path: [{ lat: 13.7205, lng: 100.5100 }, { lat: 13.7150, lng: 100.5100 }] },
     ];
 
     // Merge static data with live updates

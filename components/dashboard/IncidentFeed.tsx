@@ -8,32 +8,32 @@ const incidents = [
     {
         id: 1,
         type: "CRITICAL",
-        message: "Accident detected at Rama IX Junction",
-        time: "2 min ago",
+        message: "อุบัติเหตุที่แยกพระราม 9",
+        time: "2 นาทีที่แล้ว",
         icon: Siren,
         color: "text-destructive",
     },
     {
         id: 2,
         type: "WARNING",
-        message: "High congestion on Sukhumvit Road",
-        time: "15 min ago",
+        message: "รถหนาแน่นบนถนนสุขุมวิท",
+        time: "15 นาทีที่แล้ว",
         icon: AlertTriangle,
         color: "text-amber-500",
     },
     {
         id: 3,
         type: "RESOLVED",
-        message: "Traffic light malfunction fixed at Asok",
-        time: "45 min ago",
+        message: "ซ่อมแซมสัญญาณไฟที่อโศกเสร็จสิ้น",
+        time: "45 นาทีที่แล้ว",
         icon: CheckCircle2,
         color: "text-green-500",
     },
     {
         id: 4,
         type: "WARNING",
-        message: "Rain affecting visibility in Zone 3",
-        time: "1 hr ago",
+        message: "ฝนตกทัศนวิสัยต่ำในโซน 3",
+        time: "1 ชม. ที่แล้ว",
         icon: AlertTriangle,
         color: "text-amber-500",
     },
@@ -45,7 +45,7 @@ export function IncidentFeed() {
             <CardHeader>
                 <CardTitle className="text-secondary-foreground flex items-center gap-2">
                     <Siren className="h-5 w-5 text-destructive animate-pulse" />
-                    Live Incidents
+                    แจ้งเตือนเหตุการณ์สด
                 </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
@@ -65,8 +65,8 @@ export function IncidentFeed() {
                                     </p>
                                     <div className="flex items-center gap-2">
                                         <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${item.type === 'CRITICAL' ? 'bg-destructive/20 border-destructive text-destructive' :
-                                                item.type === 'WARNING' ? 'bg-amber-500/20 border-amber-500 text-amber-500' :
-                                                    'bg-green-500/20 border-green-500 text-green-500'
+                                            item.type === 'WARNING' ? 'bg-amber-500/20 border-amber-500 text-amber-500' :
+                                                'bg-green-500/20 border-green-500 text-green-500'
                                             }`}>
                                             {item.type}
                                         </span>

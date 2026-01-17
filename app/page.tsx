@@ -5,6 +5,7 @@ import { StatCard } from "@/components/dashboard/StatCard";
 import { RecentActivity } from "@/components/dashboard/RecentActivity";
 import { PredictionChart } from "@/components/dashboard/PredictionChart";
 import { IncidentFeed } from "@/components/dashboard/IncidentFeed";
+import { AICameraFeed } from "@/components/dashboard/AICameraFeed";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
@@ -77,14 +78,7 @@ export default function Home() {
         <div className="md:col-span-8 lg:row-span-2 space-y-4">
           <PredictionChart />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 h-[calc(100%-320px)]">
-            <div className="glass-card rounded-xl p-6 flex flex-col justify-center items-center text-center space-y-4">
-              <ShieldCheck className="h-16 w-16 text-primary mb-2" />
-              <h3 className="text-xl font-bold">เปิดใช้งานเส้นทางพิเศษ</h3>
-              <p className="text-muted-foreground text-sm">ระบบนำทางรถฉุกเฉินกำลังทำงานใน 3 เส้นทาง</p>
-              <Link href="/admin">
-                <Button variant="outline" className="w-full">จัดการมาตรการ</Button>
-              </Link>
-            </div>
+            <AICameraFeed />
             <RecentActivity />
           </div>
         </div>

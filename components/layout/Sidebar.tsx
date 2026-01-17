@@ -11,25 +11,25 @@ export function Sidebar() {
 
     const routes = [
         {
-            label: "Dashboard",
+            label: "แดชบอร์ด",
             icon: LayoutDashboard,
             href: "/",
             color: "text-sky-500",
         },
         {
-            label: "Live Map",
+            label: "แผนที่สด",
             icon: Map,
             href: "/map",
             color: "text-violet-500",
         },
         {
-            label: "Analytics",
+            label: "วิเคราะห์ข้อมูล",
             icon: BarChart3,
             href: "/analytics",
             color: "text-pink-700",
         },
         {
-            label: "Admin Control",
+            label: "ผู้ดูแลระบบ",
             icon: Settings,
             href: "/admin",
             color: "text-gray-500",

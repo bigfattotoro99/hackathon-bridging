@@ -17,7 +17,7 @@ export function PredictionChart() {
     return (
         <Card className="glass-card">
             <CardHeader>
-                <CardTitle className="text-secondary-foreground">AI Traffic Prediction (24h)</CardTitle>
+                <CardTitle className="text-secondary-foreground">การคาดการณ์ปริมาณจราจรด้วย AI (24ชม.)</CardTitle>
             </CardHeader>
             <CardContent>
                 <div className="h-[300px] w-full">
@@ -58,7 +58,7 @@ export function PredictionChart() {
                                 stroke="var(--chart-1)"
                                 fillOpacity={1}
                                 fill="url(#colorDensity)"
-                                name="Actual Density"
+                                name="ความหนาแน่นจริง"
                             />
                             <Area
                                 type="monotone"
@@ -67,7 +67,7 @@ export function PredictionChart() {
                                 strokeDasharray="5 5"
                                 fillOpacity={1}
                                 fill="url(#colorPrediction)"
-                                name="AI Prediction"
+                                name="AI คำนวณล่วงหน้า"
                             />
                         </AreaChart>
                     </ResponsiveContainer>

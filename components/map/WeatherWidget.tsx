@@ -12,7 +12,7 @@ export function WeatherWidget() {
             <CardContent className="p-4 flex flex-col gap-2">
                 <div className="flex items-center justify-between">
                     <div>
-                        <p className="text-sm font-medium text-muted-foreground">Bangkok, TH</p>
+                        <p className="text-sm font-medium text-muted-foreground">กรุงเทพฯ</p>
                         <h3 className="text-2xl font-bold">28°C</h3>
                     </div>
                     <CloudRain className="h-10 w-10 text-blue-400" />
@@ -20,15 +20,15 @@ export function WeatherWidget() {
                 <div className="grid grid-cols-2 gap-2 mt-2">
                     <div className="flex items-center gap-2 text-xs">
                         <Wind className="h-3 w-3 text-muted-foreground" />
-                        <span>12 km/h</span>
+                        <span>12 กม./ชม.</span>
                     </div>
                     <div className="flex items-center gap-2 text-xs">
                         <Droplets className="h-3 w-3 text-muted-foreground" />
-                        <span>82% Hum</span>
+                        <span>82% ความชื้น</span>
                     </div>
                 </div>
                 <div className="mt-1 pt-2 border-t border-border/50">
-                    <p className="text-xs text-amber-500 font-medium">Warning: Light Rain affecting visibility.</p>
+                    <p className="text-xs text-amber-500 font-medium">คำเตือน: ฝนตกปรอยๆ อาจบดบังทัศนวิสัย</p>
                 </div>
             </CardContent>
         </Card>

@@ -33,34 +33,34 @@ export function RoadDetailsDialog({ open, onOpenChange, roadData }: RoadDetailsD
                         </Badge>
                     </div>
                     <DialogDescription>
-                        Real-time traffic analysis and control.
+                        การวิเคราะห์และควบคุมการจราจรแบบเรียลไทม์
                     </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                     <div className="grid grid-cols-2 gap-4">
                         <div className="flex flex-col space-y-1.5 p-4 border rounded-lg bg-muted/50">
-                            <span className="text-xs text-muted-foreground flex items-center"><Car className="h-3 w-3 mr-1" /> Density</span>
+                            <span className="text-xs text-muted-foreground flex items-center"><Car className="h-3 w-3 mr-1" /> ความหนาแน่น</span>
                             <span className="text-2xl font-bold">{roadData.density || 0}%</span>
                             <Progress value={roadData.density || 0} className="h-2" />
                         </div>
                         <div className="flex flex-col space-y-1.5 p-4 border rounded-lg bg-muted/50">
-                            <span className="text-xs text-muted-foreground flex items-center"><Zap className="h-3 w-3 mr-1" /> Light Status</span>
+                            <span className="text-xs text-muted-foreground flex items-center"><Zap className="h-3 w-3 mr-1" /> สัญญาณไฟ</span>
                             <span className={`text-2xl font-bold ${roadData.lightStatus === 'green' ? 'text-green-500' : 'text-red-500'}`}>
-                                {roadData.lightStatus === 'green' ? 'GREEN' : 'RED'}
+                                {roadData.lightStatus === 'green' ? 'เขียว' : 'แดง'}
                             </span>
-                            <span className="text-xs text-muted-foreground">Next change in 15s</span>
+                            <span className="text-xs text-muted-foreground">เปลี่ยนใน 15วิ</span>
                         </div>
                     </div>
                     <Separator />
                     <div className="space-y-3">
-                        <h4 className="text-sm font-medium">AI Analysis</h4>
+                        <h4 className="text-sm font-medium">การวิเคราะห์จาก AI</h4>
                         <p className="text-sm text-muted-foreground">
-                            Traffic flow is slower than usual due to high volume from feeder roads. AI has extended green light duration by 15 seconds.
+                            การจราจรช้ากว่าปกติเนื่องจากปริมาณรถสะสม AI ได้ขยายเวลาไฟเขียวเพิ่มอีก 15 วินาที
                         </p>
                     </div>
                     <div className="flex justify-end pt-2">
-                        <Button variant="outline" className="mr-2">View History</Button>
-                        <Button variant="destructive">Force Red Light</Button>
+                        <Button variant="outline" className="mr-2">ดูประวัติ</Button>
+                        <Button variant="destructive">บังคับไฟแดง</Button>
                     </div>
                 </div>
             </DialogContent>

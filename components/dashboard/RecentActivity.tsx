@@ -6,24 +6,24 @@ const activities = [
     {
         id: 1,
         type: "congestion",
-        message: "High traffic density detected at Sukhumvit Rd.",
-        time: "2 mins ago",
+        message: "ตรวจพบความหนาแน่นสูงที่ ถ.สุขุมวิท",
+        time: "2 นาทีที่แล้ว",
         icon: AlertTriangle,
         color: "text-red-500"
     },
     {
         id: 2,
         type: "clear",
-        message: "Traffic cleared at Rama IV Junction",
-        time: "5 mins ago",
+        message: "การจราจรคล่องตัวที่ แยกพระราม 4",
+        time: "5 นาทีที่แล้ว",
         icon: CheckCircle2,
         color: "text-green-500"
     },
     {
         id: 3,
         type: "ai",
-        message: "AI adjusted green light duration to 60s at Asoke",
-        time: "10 mins ago",
+        message: "AI ปรับสัญญาณไฟเขียวเป็น 60วิ ที่อโศก",
+        time: "10 นาทีที่แล้ว",
         icon: CloudLightning,
         color: "text-blue-500"
     }
@@ -33,7 +33,7 @@ export function RecentActivity() {
     return (
         <Card className="col-span-3">
             <CardHeader>
-                <CardTitle>Recent Activity</CardTitle>
+                <CardTitle>กิจกรรมล่าสุด</CardTitle>
             </CardHeader>
             <CardContent>
                 <ScrollArea className="h-[300px]">
