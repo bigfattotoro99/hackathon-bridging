@@ -40,6 +40,11 @@ export default function MapPage() {
                                     activeZone === 'sathon' ? 'สาทร - สีลม' : 'พระราม 4'}
                         </span>
                     </div>
+                    <Link href="/simulation">
+                        <Button variant="outline" size="sm" className="bg-sky-500/10 text-sky-400 border-sky-500/50 hover:bg-sky-500/20 rounded-xl h-8 text-[10px] font-bold px-3">
+                            <Activity className="h-3 w-3 mr-2" /> โหมดจำลองเต็มรูปแบบ
+                        </Button>
+                    </Link>
                     <Button variant="outline" size="sm" className="glass border-white/5 rounded-xl h-8 text-[10px] font-bold px-3">
                         <Info className="h-3 w-3 mr-2 text-sky-400" /> คู่มือการจำลอง
                     </Button>
