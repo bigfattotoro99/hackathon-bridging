@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/store/auth";
 import { Button } from "@/components/ui/button";
@@ -16,10 +16,13 @@ export default function LoginPage() {
     const [error, setError] = useState("");
 
     // Redirect if already authenticated
-    if (isAuthenticated) {
-        router.push("/dashboard");
-        return null;
-    }
+    useEffect(() => {
+        if (isAuthenticated) {
+            router.push("/dashboard");
+        }
+    }, [isAuthenticated, router]);
+
+    if (isAuthenticated) return null;
 
     const handleLogin = (e: React.FormEvent) => {
         e.preventDefault();
