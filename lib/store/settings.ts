@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 
 export interface Settings {
     greenDuration: number; // seconds
+    yellowDuration: number; // seconds
     redDuration: number; // seconds
     vehicleSpeed: number; // px/frame
     spawnRate: number; // probability per lane per frame (0-1)
@@ -11,11 +12,12 @@ export interface Settings {
 }
 
 const DEFAULT_SETTINGS: Settings = {
-    greenDuration: 30,
-    redDuration: 30,
+    greenDuration: 15,
+    yellowDuration: 3,
+    redDuration: 15,
     vehicleSpeed: 2,
     spawnRate: 0.3,
-    minGap: 10,
+    minGap: 20,
     intersectionSize: 80,
 };
 

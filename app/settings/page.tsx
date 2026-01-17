@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useSettingsStore, type Settings } from "@/lib/store/settings";
 import { Save, RotateCcw, Settings as SettingsIcon, CheckCircle } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "../../hooks/use-toast";
 
 export default function SettingsPage() {
     const { settings, updateSettings, resetToDefault } = useSettingsStore();
@@ -51,6 +51,14 @@ export default function SettingsPage() {
             unit: 'seconds',
             min: 10,
             max: 60,
+        },
+        {
+            key: 'yellowDuration' as keyof Settings,
+            label: 'Yellow Light Duration',
+            description: 'ระยะเวลาไฟเหลือง (วินาที)',
+            unit: 'seconds',
+            min: 2,
+            max: 5,
         },
         {
             key: 'redDuration' as keyof Settings,
