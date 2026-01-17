@@ -30,7 +30,13 @@ const coverageArea = [
 
 const libraries: ("places" | "geometry" | "drawing" | "visualization")[] = ["geometry", "visualization"];
 
-import { FallbackMap } from "./FallbackMap";
+import dynamic from "next/dynamic";
+
+const InteractiveGISMap = dynamic(() => import("./InteractiveGISMap"), {
+    ssr: false,
+    loading: () => <div className="w-full h-full bg-slate-950 animate-pulse rounded-xl" />
+});
+
 import { ZoneId } from "./ZoneSelector";
 
 const zoneConfigs: Record<ZoneId, { center: { lat: number, lng: number }, coverage: any[] }> = {
@@ -95,7 +101,7 @@ export function MapWrapper({ currentZone = "krungthon" }: { currentZone?: ZoneId
     };
 
     if (isKeyInvalid) {
-        return <FallbackMap zone={currentZone} />;
+        return <InteractiveGISMap zone={currentZone} />;
     }
 
     if (loadError) {
