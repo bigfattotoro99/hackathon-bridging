@@ -1,6 +1,6 @@
 "use client";
 
-import { GoogleMap, useJsApiLoader, Polyline } from "@react-google-maps/api";
+import { GoogleMap, useJsApiLoader, Polyline, Polygon } from "@react-google-maps/api";
 import React, { useState, useCallback } from "react";
 import { Loader2 } from "lucide-react";
 import { RoadDetailsDialog } from "./RoadDetailsDialog";
@@ -19,6 +19,14 @@ const defaultCenter = {
     lat: 13.7563,
     lng: 100.5018,
 };
+
+// Define coverage area (Bangkok CBD approx)
+const coverageArea = [
+    { lat: 13.7200, lng: 100.4500 }, // SW
+    { lat: 13.8000, lng: 100.4500 }, // NW
+    { lat: 13.8000, lng: 100.6000 }, // NE
+    { lat: 13.7200, lng: 100.6000 }, // SE
+];
 
 const libraries: ("places" | "geometry" | "drawing" | "visualization")[] = ["geometry", "visualization"];
 
@@ -49,7 +57,7 @@ export function MapWrapper() {
     if (loadError) {
         return (
             <div className="w-full h-full min-h-[500px] flex items-center justify-center bg-muted rounded-xl border">
-                <p className="text-destructive">Error loading Google Maps</p>
+                <p className="text-destructive">เกิดข้อผิดพลาดในการโหลดแผนที่ (Error loading Google Maps)</p>
             </div>
         );
     }
@@ -82,6 +90,18 @@ export function MapWrapper() {
                     zoomControl: true,
                 }}
             >
+                {/* Coverage Area Boundary */}
+                <Polygon
+                    paths={coverageArea}
+                    options={{
+                        fillColor: "#3b82f6", // Blue
+                        fillOpacity: 0.1,
+                        strokeColor: "#3b82f6",
+                        strokeOpacity: 0.8,
+                        strokeWeight: 2,
+                    }}
+                />
+
                 <TrafficLayer onRoadClick={handleRoadClick} />
             </GoogleMap>
             <RoadDetailsDialog
@@ -100,9 +120,9 @@ function TrafficLayer({ onRoadClick }: { onRoadClick: (road: any) => void }) {
 
     // Initial static data
     const initialRoads = [
-        { id: "1", name: "Sukhumvit Rd", density: 85, status: "congested", lightStatus: "green", path: [{ lat: 13.75, lng: 100.50 }, { lat: 13.76, lng: 100.52 }] },
-        { id: "2", name: "Rama IV Rd", density: 20, status: "clear", lightStatus: "red", path: [{ lat: 13.74, lng: 100.55 }, { lat: 13.74, lng: 100.58 }] },
-        { id: "3", name: "Petchaburi Rd", density: 55, status: "moderate", lightStatus: "green", path: [{ lat: 13.72, lng: 100.52 }, { lat: 13.74, lng: 100.54 }] },
+        { id: "1", name: "ถนนสุขุมวิท", density: 85, status: "รถติดขัด", lightStatus: "เขียว", path: [{ lat: 13.75, lng: 100.50 }, { lat: 13.76, lng: 100.52 }] },
+        { id: "2", name: "ถนนพระราม 4", density: 20, status: "คล่องตัว", lightStatus: "แดง", path: [{ lat: 13.74, lng: 100.55 }, { lat: 13.74, lng: 100.58 }] },
+        { id: "3", name: "ถนนเพชรบุรี", density: 55, status: "ปานกลาง", lightStatus: "เขียว", path: [{ lat: 13.72, lng: 100.52 }, { lat: 13.74, lng: 100.54 }] },
     ];
 
     // Merge static data with live updates
@@ -111,13 +131,13 @@ function TrafficLayer({ onRoadClick }: { onRoadClick: (road: any) => void }) {
         if (update) {
             // Determine color based on new density
             let color = "#22c55e"; // Green
-            let status = "clear";
+            let status = "Clear";
             if (update.density > 70) {
                 color = "#ef4444"; // Red
-                status = "congested";
+                status = "Congested";
             } else if (update.density > 40) {
                 color = "#eab308"; // Yellow
-                status = "moderate";
+                status = "Moderate";
             }
             return { ...road, ...update, color, status };
         }
@@ -136,8 +156,8 @@ function TrafficLayer({ onRoadClick }: { onRoadClick: (road: any) => void }) {
                     path={road.path}
                     options={{
                         strokeColor: road.color,
-                        strokeOpacity: 0.8,
-                        strokeWeight: 8,
+                        strokeOpacity: 0.9,
+                        strokeWeight: 10, // Thicker lines
                         clickable: true
                     }}
                     onClick={() => onRoadClick(road)}
