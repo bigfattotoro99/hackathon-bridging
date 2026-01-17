@@ -30,10 +30,17 @@ const coverageArea = [
 
 const libraries: ("places" | "geometry" | "drawing" | "visualization")[] = ["geometry", "visualization"];
 
+import { FallbackMap } from "./FallbackMap";
+
 export function MapWrapper() {
+    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
+
+    // Check for missing or placeholder key
+    const isKeyInvalid = !apiKey || apiKey === "YOUR_API_KEY_HERE";
+
     const { isLoaded, loadError } = useJsApiLoader({
         id: "google-map-script",
-        googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
+        googleMapsApiKey: apiKey,
         libraries,
     });
 
@@ -53,6 +60,10 @@ export function MapWrapper() {
         setSelectedRoad(road);
         setIsDialogOpen(true);
     };
+
+    if (isKeyInvalid) {
+        return <FallbackMap />;
+    }
 
     if (loadError) {
         return (
@@ -102,7 +113,7 @@ export function MapWrapper() {
                     }}
                 />
 
-                <TrafficLayer onRoadClick={handleRoadClick} />
+                <SimulatedTrafficLayer onRoadClick={handleRoadClick} />
             </GoogleMap>
             <RoadDetailsDialog
                 open={isDialogOpen}
@@ -115,7 +126,7 @@ export function MapWrapper() {
 }
 
 // Internal component for Traffic Overlay
-function TrafficLayer({ onRoadClick }: { onRoadClick: (road: any) => void }) {
+function SimulatedTrafficLayer({ onRoadClick }: { onRoadClick: (road: any) => void }) {
     const { trafficData } = useTrafficData();
 
     // Initial static data (Krung Thon Buri Simulation)
