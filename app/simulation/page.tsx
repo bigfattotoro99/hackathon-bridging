@@ -18,12 +18,16 @@ import {
     Activity,
     Timer,
 } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // --- Types & Constants ---
 
 type Direction = "N" | "S" | "E" | "W";
 type LightState = "green" | "yellow" | "red";
-type PhaseState = "NS_GREEN" | "NS_YELLOW" | "ALL_RED_1" | "WE_GREEN" | "WE_YELLOW" | "ALL_RED_2";
+type PhaseState =
+    | "NS_GREEN" | "NS_YELLOW" | "WE_GREEN" | "WE_YELLOW"
+    | "N_GREEN" | "N_YELLOW" | "W_GREEN" | "W_YELLOW"
+    | "ALL_RED_1" | "ALL_RED_2";
 type VehicleType = "car" | "truck";
 
 interface Vehicle {
@@ -56,6 +60,7 @@ const VEHICLE_CONFIGS = {
 export default function SimulationPage() {
     const { settings } = useSettingsStore();
 
+    const [simMode, setSimMode] = useState<"1way" | "2way">("2way");
     const [isPaused, setIsPaused] = useState(false);
     const [isManual, setIsManual] = useState(false);
     const [phase, setPhase] = useState<PhaseState>("NS_GREEN");
@@ -68,18 +73,36 @@ export default function SimulationPage() {
     const requestRef = useRef<number | null>(null);
     const imagesRef = useRef<{ car: HTMLImageElement; truck: HTMLImageElement } | null>(null);
 
+    // Reset when mode changes
+    useEffect(() => {
+        vehiclesRef.current = [];
+        setCumulativePassed(0);
+        setPhase(simMode === "2way" ? "NS_GREEN" : "N_GREEN");
+        setTimer(settings.greenDuration);
+    }, [simMode, settings.greenDuration]);
+
     // --- Map Phase to Lights ---
     const getLights = useCallback(() => {
         const l: Record<Direction, LightState> = { N: "red", S: "red", E: "red", W: "red" };
-        switch (phase) {
-            case "NS_GREEN": l.N = "green"; l.S = "green"; break;
-            case "NS_YELLOW": l.N = "yellow"; l.S = "yellow"; break;
-            case "WE_GREEN": l.W = "green"; l.E = "green"; break;
-            case "WE_YELLOW": l.W = "yellow"; l.E = "yellow"; break;
-            default: break;
+        if (simMode === "2way") {
+            switch (phase) {
+                case "NS_GREEN": l.N = "green"; l.S = "green"; break;
+                case "NS_YELLOW": l.N = "yellow"; l.S = "yellow"; break;
+                case "WE_GREEN": l.W = "green"; l.E = "green"; break;
+                case "WE_YELLOW": l.W = "yellow"; l.E = "yellow"; break;
+                default: break;
+            }
+        } else {
+            switch (phase) {
+                case "N_GREEN": l.N = "green"; break;
+                case "N_YELLOW": l.N = "yellow"; break;
+                case "W_GREEN": l.W = "green"; break;
+                case "W_YELLOW": l.W = "yellow"; break;
+                default: break;
+            }
         }
         return l;
-    }, [phase]);
+    }, [phase, simMode]);
 
     // --- Initialization ---
     useEffect(() => {
@@ -93,15 +116,19 @@ export default function SimulationPage() {
 
     // --- Simulation Update ---
     const spawnVehicle = useCallback(() => {
-        ["N", "S", "E", "W"].forEach((dir) => {
-            // Thai Driving: Keep Left
-            // North-entry (Southbound) uses Lanes 1, 2
-            // South-entry (Northbound) uses Lanes 3, 4 (relative to center-line)
-            const lanes = (dir === "N" || dir === "E") ? ["1", "2"] : ["3", "4"];
+        const directions: Direction[] = simMode === "2way" ? ["N", "S", "E", "W"] : ["N", "W"];
+
+        directions.forEach((dir) => {
+            let lanes = ["1", "2", "3", "4"];
+            if (simMode === "2way") {
+                lanes = (dir === "N" || dir === "E") ? ["1", "2"] : ["3", "4"];
+            }
 
             lanes.forEach((laneNum) => {
                 const laneId = `${dir}${laneNum}`;
-                if (Math.random() < settings.spawnRate / 120) { // Slower spawn as we have 4 directions now
+                const spawnChance = simMode === "2way" ? settings.spawnRate / 120 : settings.spawnRate / 60;
+
+                if (Math.random() < spawnChance) {
                     const inLane = vehiclesRef.current.filter(v => v.laneId === laneId);
 
                     let headDist = 1000;
@@ -139,7 +166,7 @@ export default function SimulationPage() {
                 }
             });
         });
-    }, [settings]);
+    }, [settings, simMode]);
 
     const updateSimulation = useCallback(() => {
         if (isPaused) return;
@@ -149,13 +176,21 @@ export default function SimulationPage() {
             let targetSpeed = v.targetSpeed;
             let shouldStop = false;
 
-            const stopLineCoord = (v.direction === "N" || v.direction === "W") ? INTERSECTION_MIN - 15 : INTERSECTION_MAX + 15;
+            // Stop Line Calculation
+            let stopLineCoord = 0;
+            let isApproaching = false;
 
-            const isApproaching =
-                (v.direction === "N" && v.y < stopLineCoord) ||
-                (v.direction === "S" && v.y > stopLineCoord) ||
-                (v.direction === "W" && v.x < stopLineCoord) ||
-                (v.direction === "E" && v.x > stopLineCoord);
+            if (simMode === "2way") {
+                stopLineCoord = (v.direction === "N" || v.direction === "W") ? INTERSECTION_MIN - 15 : INTERSECTION_MAX + 15;
+                isApproaching = (v.direction === "N" && v.y < stopLineCoord) ||
+                    (v.direction === "S" && v.y > stopLineCoord) ||
+                    (v.direction === "W" && v.x < stopLineCoord) ||
+                    (v.direction === "E" && v.x > stopLineCoord);
+            } else {
+                stopLineCoord = INTERSECTION_MIN - 15;
+                isApproaching = (v.direction === "N" && v.y < stopLineCoord) ||
+                    (v.direction === "W" && v.x < stopLineCoord);
+            }
 
             const distToLine = Math.abs(v.direction === "N" || v.direction === "S" ? stopLineCoord - v.y : stopLineCoord - v.x) - (v.width / 2);
 
@@ -230,7 +265,7 @@ export default function SimulationPage() {
             v.x > -100 && v.x < CANVAS_SIZE + 100 &&
             v.y > -100 && v.y < CANVAS_SIZE + 100
         );
-    }, [isPaused, spawnVehicle, getLights, settings]);
+    }, [isPaused, spawnVehicle, getLights, settings, simMode]);
 
     const draw = useCallback((ctx: CanvasRenderingContext2D) => {
         ctx.fillStyle = "#0a0a0c"; ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
@@ -241,9 +276,8 @@ export default function SimulationPage() {
         ctx.fillRect(0, INTERSECTION_MIN, CANVAS_SIZE, ROAD_WIDTH);
 
         // Lane Markers
-        ctx.setLineDash([15, 20]); ctx.strokeStyle = "rgba(255, 255, 255, 0.1)"; ctx.lineWidth = 1;
         for (let i = 1; i < 4; i++) {
-            if (i === 2) { // Center divider
+            if (i === 2 && simMode === "2way") { // Center divider only for 2way
                 ctx.setLineDash([]); ctx.strokeStyle = "rgba(251, 191, 36, 0.3)"; ctx.lineWidth = 2;
             } else {
                 ctx.setLineDash([15, 20]); ctx.strokeStyle = "rgba(255, 255, 255, 0.1)"; ctx.lineWidth = 1;
@@ -256,14 +290,15 @@ export default function SimulationPage() {
 
         // Stop Lines
         ctx.strokeStyle = "#fbbf24"; ctx.lineWidth = 4; ctx.setLineDash([]);
-        // N Stop (Top)
-        ctx.beginPath(); ctx.moveTo(INTERSECTION_MIN, INTERSECTION_MIN - 15); ctx.lineTo(CENTER, INTERSECTION_MIN - 15); ctx.stroke();
-        // S Stop (Bottom)
-        ctx.beginPath(); ctx.moveTo(CENTER, INTERSECTION_MAX + 15); ctx.lineTo(INTERSECTION_MAX, INTERSECTION_MAX + 15); ctx.stroke();
-        // W Stop (Left)
-        ctx.beginPath(); ctx.moveTo(INTERSECTION_MIN - 15, CENTER); ctx.lineTo(INTERSECTION_MIN - 15, INTERSECTION_MAX); ctx.stroke();
-        // E Stop (Right)
-        ctx.beginPath(); ctx.moveTo(INTERSECTION_MAX + 15, INTERSECTION_MIN); ctx.lineTo(INTERSECTION_MAX + 15, CENTER); ctx.stroke();
+        if (simMode === "2way") {
+            ctx.beginPath(); ctx.moveTo(INTERSECTION_MIN, INTERSECTION_MIN - 15); ctx.lineTo(CENTER, INTERSECTION_MIN - 15); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(CENTER, INTERSECTION_MAX + 15); ctx.lineTo(INTERSECTION_MAX, INTERSECTION_MAX + 15); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(INTERSECTION_MIN - 15, CENTER); ctx.lineTo(INTERSECTION_MIN - 15, INTERSECTION_MAX); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(INTERSECTION_MAX + 15, INTERSECTION_MIN); ctx.lineTo(INTERSECTION_MAX + 15, CENTER); ctx.stroke();
+        } else {
+            ctx.beginPath(); ctx.moveTo(INTERSECTION_MIN, INTERSECTION_MIN - 15); ctx.lineTo(INTERSECTION_MAX, INTERSECTION_MIN - 15); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(INTERSECTION_MIN - 15, INTERSECTION_MIN); ctx.lineTo(INTERSECTION_MIN - 15, INTERSECTION_MAX); ctx.stroke();
+        }
 
         const lights = getLights();
         const drawTrafficLight = (lx: number, ly: number, color: LightState) => {
@@ -273,10 +308,15 @@ export default function SimulationPage() {
             ctx.beginPath(); ctx.arc(lx, ly, 10, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
         };
 
-        drawTrafficLight(INTERSECTION_MAX + 25, INTERSECTION_MIN - 25, lights.N);
-        drawTrafficLight(INTERSECTION_MIN - 25, INTERSECTION_MAX + 25, lights.S);
-        drawTrafficLight(INTERSECTION_MIN - 25, INTERSECTION_MIN - 25, lights.W);
-        drawTrafficLight(INTERSECTION_MAX + 25, INTERSECTION_MAX + 25, lights.E);
+        if (simMode === "2way") {
+            drawTrafficLight(INTERSECTION_MAX + 25, INTERSECTION_MIN - 25, lights.N);
+            drawTrafficLight(INTERSECTION_MIN - 25, INTERSECTION_MAX + 25, lights.S);
+            drawTrafficLight(INTERSECTION_MIN - 25, INTERSECTION_MIN - 25, lights.W);
+            drawTrafficLight(INTERSECTION_MAX + 25, INTERSECTION_MAX + 25, lights.E);
+        } else {
+            drawTrafficLight(INTERSECTION_MAX + 25, INTERSECTION_MIN - 25, lights.N);
+            drawTrafficLight(INTERSECTION_MIN - 25, INTERSECTION_MAX + 25, lights.W);
+        }
 
         vehiclesRef.current.forEach(v => {
             ctx.save(); ctx.translate(v.x, v.y);
@@ -306,23 +346,33 @@ export default function SimulationPage() {
             setTimer(t => {
                 if (t <= 1) {
                     setPhase(p => {
-                        if (p === "NS_GREEN") { setTimer(settings.yellowDuration); return "NS_YELLOW"; }
-                        if (p === "NS_YELLOW") { setTimer(2); return "ALL_RED_1"; }
-                        if (p === "ALL_RED_1") { setTimer(settings.greenDuration); return "WE_GREEN"; }
-                        if (p === "WE_GREEN") { setTimer(settings.yellowDuration); return "WE_YELLOW"; }
-                        if (p === "WE_YELLOW") { setTimer(2); return "ALL_RED_2"; }
-                        setTimer(settings.greenDuration); return "NS_GREEN";
+                        if (simMode === "2way") {
+                            if (p === "NS_GREEN") { setTimer(settings.yellowDuration); return "NS_YELLOW"; }
+                            if (p === "NS_YELLOW") { setTimer(2); return "ALL_RED_1"; }
+                            if (p === "ALL_RED_1") { setTimer(settings.greenDuration); return "WE_GREEN"; }
+                            if (p === "WE_GREEN") { setTimer(settings.yellowDuration); return "WE_YELLOW"; }
+                            if (p === "WE_YELLOW") { setTimer(2); return "ALL_RED_2"; }
+                            setTimer(settings.greenDuration); return "NS_GREEN";
+                        } else {
+                            if (p === "N_GREEN") { setTimer(settings.yellowDuration); return "N_YELLOW"; }
+                            if (p === "N_YELLOW") { setTimer(2); return "ALL_RED_1"; }
+                            if (p === "ALL_RED_1") { setTimer(settings.greenDuration); return "W_GREEN"; }
+                            if (p === "W_GREEN") { setTimer(settings.yellowDuration); return "W_YELLOW"; }
+                            if (p === "W_YELLOW") { setTimer(2); return "ALL_RED_2"; }
+                            setTimer(settings.greenDuration); return "N_GREEN";
+                        }
                     });
                 }
                 return t - 1;
             });
         }, 1000);
         return () => clearInterval(interval);
-    }, [isPaused, isManual, settings]);
+    }, [isPaused, isManual, settings, simMode]);
 
     const togglePhase = () => {
         if (!isManual) return;
-        setPhase(p => p.startsWith("NS") ? "WE_GREEN" : "NS_GREEN");
+        if (simMode === "2way") setPhase(p => p.startsWith("NS") ? "WE_GREEN" : "NS_GREEN");
+        else setPhase(p => p.startsWith("N") ? "W_GREEN" : "N_GREEN");
         setTimer(settings.greenDuration);
     };
 
@@ -332,6 +382,16 @@ export default function SimulationPage() {
                 <Navigation />
                 <main className="flex-1 flex overflow-hidden">
                     <aside className="w-80 border-r border-white/5 bg-slate-950 p-6 flex flex-col gap-6 overflow-y-auto">
+                        <div className="space-y-4">
+                            <h2 className="text-[10px] font-black uppercase text-zinc-500 tracking-widest">Simulation Mode</h2>
+                            <Tabs value={simMode} onValueChange={(v) => setSimMode(v as any)} className="w-full">
+                                <TabsList className="grid w-full grid-cols-2 bg-black/40 border border-white/5">
+                                    <TabsTrigger value="1way" className="text-xs uppercase font-black">1-Way</TabsTrigger>
+                                    <TabsTrigger value="2way" className="text-xs uppercase font-black">2-Way</TabsTrigger>
+                                </TabsList>
+                            </Tabs>
+                        </div>
+
                         <div className="flex items-center justify-between">
                             <h2 className="text-[10px] font-black uppercase text-zinc-500 tracking-widest flex items-center gap-2"><ShieldAlert className="w-3 h-3 text-amber-500" /> Control</h2>
                             <Badge variant={isManual ? "destructive" : "outline"} className="text-[9px]">{isManual ? "MANUAL" : "AUTO"}</Badge>
@@ -341,22 +401,35 @@ export default function SimulationPage() {
                             <Button onClick={() => setIsPaused(!isPaused)} variant="outline" className="h-12 border-white/10">{isPaused ? <Play className="w-4 h-4 mr-2" /> : <Pause className="w-4 h-4 mr-2" />} {isPaused ? "Resume" : "Pause"}</Button>
                         </div>
                         <Card className="bg-black/40 border-white/5 p-4 space-y-4">
-                            <div className="flex justify-between items-center"><span className="text-[10px] font-black uppercase text-zinc-500">2-Way Cycle</span><div className="flex items-center gap-2 text-sky-400 font-mono text-xs"><Timer className="w-3 h-3" /> {timer}s</div></div>
+                            <div className="flex justify-between items-center"><span className="text-[10px] font-black uppercase text-zinc-500">{simMode === "1way" ? "1-Way Cycle" : "2-Way Cycle"}</span><div className="flex items-center gap-2 text-sky-400 font-mono text-xs"><Timer className="w-3 h-3" /> {timer}s</div></div>
                             <div className="space-y-2">
-                                <Button disabled={!isManual} onClick={togglePhase} className={`w-full justify-start gap-3 h-14 uppercase ${phase.startsWith("NS") ? 'bg-amber-500/10 text-amber-500 border-amber-500/30' : 'text-zinc-600 border-white/5'}`} variant="outline"><div className="flex flex-col"><div className="text-[8px] font-black">PHASE A</div><div className="text-[10px]">NORTH ⇵ SOUTH</div></div></Button>
-                                <Button disabled={!isManual} onClick={togglePhase} className={`w-full justify-start gap-3 h-14 uppercase ${phase.startsWith("WE") ? 'bg-sky-500/10 text-sky-400 border-sky-500/30' : 'text-zinc-600 border-white/5'}`} variant="outline"><div className="flex flex-col"><div className="text-[8px] font-black">PHASE B</div><div className="text-[10px]">WEST ⇄ EAST</div></div></Button>
+                                <Button disabled={!isManual} onClick={togglePhase} className={`w-full justify-start gap-3 h-14 uppercase ${phase.startsWith(simMode === "2way" ? "NS" : "N") ? 'bg-amber-500/10 text-amber-500 border-amber-500/30' : 'text-zinc-600 border-white/5'}`} variant="outline">
+                                    <div className="flex flex-col">
+                                        <div className="text-[8px] font-black">PHASE A</div>
+                                        <div className="text-[10px]">{simMode === "2way" ? "NORTH ⇵ SOUTH" : "NORTH ➜ SOUTH"}</div>
+                                    </div>
+                                </Button>
+                                <Button disabled={!isManual} onClick={togglePhase} className={`w-full justify-start gap-3 h-14 uppercase ${phase.startsWith(simMode === "2way" ? "WE" : "W") ? 'bg-sky-500/10 text-sky-400 border-sky-500/30' : 'text-zinc-600 border-white/5'}`} variant="outline">
+                                    <div className="flex flex-col">
+                                        <div className="text-[8px] font-black">PHASE B</div>
+                                        <div className="text-[10px]">{simMode === "2way" ? "WEST ⇄ EAST" : "WEST ➜ EAST"}</div>
+                                    </div>
+                                </Button>
                             </div>
                         </Card>
                         <div className="p-4 bg-sky-500/5 border border-sky-500/10 rounded-xl space-y-2">
                             <h3 className="text-[9px] font-bold text-sky-400 uppercase tracking-widest">Efficiency</h3>
-                            <div className="grid grid-cols-2 gap-4"><div><p className="text-[8px] text-zinc-500 uppercase">Input_Streams</p><p className="text-lg font-black">4_WAY</p></div><div><p className="text-[8px] text-zinc-500 uppercase">Flow_Rate</p><p className="text-lg font-black">{cumulativePassed}</p></div></div>
+                            <div className="grid grid-cols-2 gap-4"><div><p className="text-[8px] text-zinc-500 uppercase">Mode</p><p className="text-lg font-black">{simMode.toUpperCase()}</p></div><div><p className="text-[8px] text-zinc-500 uppercase">Flow_Rate</p><p className="text-lg font-black">{cumulativePassed}</p></div></div>
                         </div>
                         <Button onClick={() => { vehiclesRef.current = []; setCumulativePassed(0); }} variant="outline" className="mt-auto h-10 border-white/10 text-zinc-500 text-[10px] font-black uppercase tracking-widest"><RefreshCcw className="w-3 h-3 mr-2" /> Reset Engine</Button>
                     </aside>
                     <section className="flex-1 relative bg-[#060608] flex items-center justify-center p-8 overflow-hidden">
                         <div className="relative shadow-[0_0_100px_rgba(0,0,0,0.8)] border border-white/5 rounded-2xl overflow-hidden aspect-square h-full max-h-[90vh]">
                             <canvas ref={canvasRef} width={CANVAS_SIZE} height={CANVAS_SIZE} className="w-full h-full" />
-                            <div className="absolute top-6 left-6 pointer-events-none"><Badge className="bg-sky-500 text-white font-black text-[10px] tracking-widest px-2 animate-pulse mb-2">2Way_ACTIVE</Badge><h2 className="text-3xl font-black text-white/5 italic select-none">SMART_GRID_V5.0</h2></div>
+                            <div className="absolute top-6 left-6 pointer-events-none">
+                                <Badge className="bg-emerald-500 text-white font-black text-[10px] tracking-widest px-2 animate-pulse mb-2">{simMode.toUpperCase()}_MODE</Badge>
+                                <h2 className="text-3xl font-black text-white/5 italic select-none">SMART_GRID_V6.0</h2>
+                            </div>
                             <div className="absolute bottom-6 right-6 pointer-events-none text-right font-black text-[10px] text-sky-500/50 uppercase tracking-widest">{phase.replace("_", " ")}</div>
                         </div>
                     </section>
