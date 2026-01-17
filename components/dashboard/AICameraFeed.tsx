@@ -15,6 +15,7 @@ interface DetectedObject {
     height: number;
     confidence: number;
     color?: string;
+    speed?: number;
 }
 
 export function AICameraFeed({ zone = "krungthon" }: { zone?: ZoneId }) {
@@ -23,63 +24,77 @@ export function AICameraFeed({ zone = "krungthon" }: { zone?: ZoneId }) {
     const [logs, setLogs] = useState<string[]>(["INIT 0x0... SYSTEM_READY"]);
 
     useEffect(() => {
-        // Simulation loop
-        const interval = setInterval(() => {
-            const newObjects: DetectedObject[] = [];
-            const objCount = Math.floor(Math.random() * 6) + 3;
-            const newLogs: string[] = [];
+        // Animation & Simulation loop
+        let lastId = 0;
+        const generateObject = () => {
+            const rand = Math.random();
+            let type: "car" | "person" | "taxi" | "bus" = "car";
+            let color = undefined;
 
-            for (let i = 0; i < objCount; i++) {
-                const rand = Math.random();
-                let type: "car" | "person" | "taxi" | "bus" = "car";
-                let color = undefined;
-
-                if (rand > 0.8) type = "person";
-                else if (rand > 0.6) {
-                    type = "taxi";
-                    color = Math.random() > 0.5 ? "#ff69b4" : "#22c55e"; // Pink or Green Taxi
-                } else if (rand > 0.55) {
-                    type = "bus";
-                }
-
-                const confidence = Math.round(Math.random() * 10 + 88);
-                newObjects.push({
-                    id: Math.random(),
-                    type,
-                    color,
-                    x: Math.random() * 85,
-                    y: Math.random() * 55 + 25,
-                    width: type === "bus" ? 22 : (type === "car" || type === "taxi" ? 14 : 4),
-                    height: type === "bus" ? 8 : (type === "car" || type === "taxi" ? 8 : 10),
-                    confidence,
-                });
-
-                if (Math.random() > 0.7) {
-                    newLogs.push(`[${new Date().toLocaleTimeString()}] TRK_${type.toUpperCase()} val=${confidence}%`);
-                }
+            if (rand > 0.8) type = "person";
+            else if (rand > 0.6) {
+                type = "taxi";
+                color = Math.random() > 0.5 ? "#ff69b4" : "#22c55e";
+            } else if (rand > 0.55) {
+                type = "bus";
             }
 
-            setObjects(newObjects);
-            setLogs(prev => [...newLogs, ...prev].slice(0, 10));
-            setCounts(prev => ({
-                cars: prev.cars + (Math.random() > 0.6 ? 1 : 0),
-                people: prev.people + (Math.random() > 0.8 ? 1 : 0),
-            }));
+            const confidence = Math.round(Math.random() * 10 + 88);
+            const direction = Math.random() > 0.5 ? 1 : -1;
 
-        }, 2500);
+            return {
+                id: ++lastId,
+                type,
+                color,
+                x: direction > 0 ? -20 : 110, // Start off-screen
+                y: Math.random() * 50 + 25,
+                width: type === "bus" ? 22 : (type === "car" || type === "taxi" ? 14 : 4),
+                height: type === "bus" ? 8 : (type === "car" || type === "taxi" ? 8 : 10),
+                confidence,
+                speed: (Math.random() * 0.4 + 0.2) * direction,
+            };
+        };
+
+        // Initialize with some objects
+        let activeObjects: DetectedObject[] = [];
+
+        const interval = setInterval(() => {
+            // Update positions
+            activeObjects = activeObjects
+                .map(obj => ({ ...obj, x: obj.x + (obj.speed || 0) }))
+                // Filter out those that left the screen
+                .filter(obj => obj.x > -30 && obj.x < 130);
+
+            // Periodically add new objects
+            if (activeObjects.length < 5 && Math.random() > 0.95) {
+                const newObj = generateObject();
+                activeObjects.push(newObj);
+
+                // Add log entry
+                setLogs(prev => [`[${new Date().toLocaleTimeString()}] DETECTED: ${newObj.type.toUpperCase()} ID:0x${newObj.id.toString(16)}`, ...prev].slice(0, 10));
+
+                // Update counts
+                setCounts(prev => ({
+                    cars: prev.cars + (newObj.type !== 'person' ? 1 : 0),
+                    people: prev.people + (newObj.type === 'person' ? 1 : 0),
+                }));
+            }
+
+            setObjects([...activeObjects]);
+        }, 50); // 20 FPS for smooth motion
 
         return () => clearInterval(interval);
     }, []);
 
     return (
-        <Card className="glass-card shadow-3xl border-white/5 overflow-hidden group">
-            <CardHeader className="pb-3 bg-white/5 border-b border-white/5">
-                <CardTitle className="flex justify-between items-center text-sm font-bold tracking-widest text-zinc-400 uppercase">
+        <Card className="glass-card shadow-3xl border-white/5 overflow-hidden group h-full flex flex-col">
+            <CardHeader className="pb-3 bg-white/5 border-b border-white/5 shrink-0">
+                <CardTitle className="flex justify-between items-center text-[11px] font-bold tracking-widest text-zinc-400 uppercase">
                     <span className="flex items-center gap-2">
-                        <Video className="h-4 w-4 text-emerald-500 animate-pulse" />
+                        <Video className="h-3.5 w-3.5 text-emerald-500 animate-pulse" />
                         AI วิเคราะห์กระแสจราจร
                     </span>
-                    <Badge variant="outline" className="font-mono text-[9px] border-emerald-500/30 text-emerald-400">
+                    <Badge variant="outline" className="font-mono text-[8px] border-emerald-500/30 text-emerald-400 py-0 h-5">
                         8K • 60 FPS • LIVE
                     </Badge>
                 </CardTitle>
@@ -94,9 +109,10 @@ export function AICameraFeed({ zone = "krungthon" }: { zone?: ZoneId }) {
                     <div className="absolute top-2 left-2 text-[8px] font-mono text-emerald-500/40 z-20">FR_INDEX: 489230</div>
                     <div className="absolute bottom-2 left-2 text-[8px] font-mono text-emerald-500/40 z-20">ISO: 400 • 1/120s</div>
 
-                    {/* HUD: ZONE Box matching user screenshot */}
-                    <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20">
-                        <div className="bg-black/90 text-white text-xs font-bold px-4 py-1.5 rounded-lg border border-white/20 shadow-2xl backdrop-blur-xl tracking-wide uppercase">
+                    {/* NEW SMAL HUD AT TOP - As requested */}
+                    <div className="absolute top-2 left-1/2 -translate-x-1/2 z-30">
+                        <div className="bg-emerald-500/10 backdrop-blur-md text-emerald-400 text-[9px] font-bold px-3 py-1 rounded-full border border-emerald-500/20 flex items-center gap-2 shadow-lg">
+                            <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
                             ZONE: {zone === 'krungthon' ? 'Krung Thon Buri 01' :
                                 zone === 'sukhumvit' ? 'Sukhumvit 21 (Asoke)' :
                                     zone === 'sathon' ? 'Sathon-Naradhiwas' : 'Rama IV Junction'}
@@ -107,27 +123,29 @@ export function AICameraFeed({ zone = "krungthon" }: { zone?: ZoneId }) {
                     {objects.map((obj) => (
                         <div
                             key={obj.id}
-                            className={`absolute transition-all duration-1000 ease-in-out flex flex-col items-center justify-center z-10`}
+                            className="absolute flex flex-col items-center justify-center z-10 pointer-events-none"
                             style={{
                                 left: `${obj.x}%`,
                                 top: `${obj.y}%`,
                                 width: `${obj.width}%`,
                                 height: `${obj.height}%`,
+                                transition: 'none' // Disable CSS transition for smooth frame-by-frame updates
                             }}
                         >
                             <div
-                                className={`w-full h-full rounded-sm border-[1.5px] shadow-[0_0_10px_rgba(16,185,129,0.3)] transition-colors duration-500`}
+                                className="w-full h-full rounded-sm border shadow-[0_0_10px_rgba(16,185,129,0.2)]"
                                 style={{
                                     borderColor: obj.type === 'person' ? '#38bdf8' : (obj.color || '#10b981'),
-                                    backgroundColor: obj.type === 'person' ? 'rgba(56,189,248,0.1)' : (obj.color ? `${obj.color}15` : 'rgba(16,185,129,0.1)'),
+                                    backgroundColor: obj.type === 'person' ? 'rgba(56,189,248,0.05)' : (obj.color ? `${obj.color}10` : 'rgba(16,185,129,0.05)'),
+                                    borderWidth: '1.5px'
                                 }}
                             >
-                                <div className="absolute -top-7 left-1/2 -translate-x-1/2 whitespace-nowrap">
+                                <div className="absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap">
                                     <Badge
-                                        className="rounded-lg px-2 py-0.5 text-[10px] font-bold shadow-lg border-0 flex items-center gap-1.5"
+                                        className="rounded-md px-1 py-0 text-[8px] font-bold shadow-lg border-0 flex items-center gap-1"
                                         style={{ backgroundColor: obj.type === 'person' ? '#38bdf8' : (obj.color || '#10b981'), color: '#000' }}
                                     >
-                                        {obj.type === 'person' ? <User className="h-3 w-3" /> : (obj.type === 'bus' ? <ShieldCheck className="h-3 w-3" /> : <CarIcon className="h-3 w-3" />)}
+                                        {obj.type === 'person' ? <User className="h-2.5 w-2.5" /> : (obj.type === 'bus' ? <ShieldCheck className="h-2.5 w-2.5" /> : <CarIcon className="h-2.5 w-2.5" />)}
                                         {obj.confidence}%
                                     </Badge>
                                 </div>
